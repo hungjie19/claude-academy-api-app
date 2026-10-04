@@ -10,11 +10,13 @@
 第 14 堂加程式碼評分），舊的課程 script 不能壞。
 """
 
+import ast
 import json
+import re
 from pathlib import Path
 from statistics import mean
 
-from chat_helpers import add_user_message, chat, client, model
+from chat_helpers import add_assistant_message, add_user_message, chat, client, model
 
 DATASET_PATH = Path(__file__).parent / "dataset.json"
 
@@ -29,11 +31,24 @@ def load_dataset():
     return json.loads(DATASET_PATH.read_text(encoding="utf-8"))
 
 
-def run_prompt(test_case):
+# 版本 2（第 14 堂）：把格式要求講明白，並用不指定語言的預填逼它只給原始程式碼
+PROMPT_TEMPLATE_V2 = """
+Please provide a solution to the following task:
+{task}
+
+* Respond only with Python, JSON, or a plain Regex
+* Do not add any comments or commentary or explanation
+"""
+
+
+def run_prompt(test_case, template=PROMPT_TEMPLATE, prefill=None):
     """把測試案例塞進提示範本，拿 Claude 的輸出。"""
-    prompt = PROMPT_TEMPLATE.format(task=test_case["task"])
+    prompt = template.format(task=test_case["task"])
     messages = []
     add_user_message(messages, prompt)
+    if prefill:
+        add_assistant_message(messages, prefill)
+        return chat(messages, stop_sequences=["```"])
     return chat(messages)
 
 
@@ -85,22 +100,57 @@ def grade_by_model(test_case, output):
     return json.loads(text)
 
 
-def run_test_case(test_case, grader=None):
+VALIDATORS = {
+    "json": lambda t: json.loads(t),
+    "python": lambda t: ast.parse(t),
+    "regex": lambda t: re.compile(t),
+}
+
+
+def grade_syntax(output, test_case):
+    """程式碼評分器：解析得過給 10、不過給 0。
+
+    「程式碼評分器」指的是「用程式碼寫的評分器」，不是「評程式碼的評分器」。
+    這裡剛好在評程式碼，是因為這個專案的受測提示在生成程式碼。
+    """
+    validator = VALIDATORS.get(test_case.get("format"))
+    if validator is None:
+        return 0
+    try:
+        validator(output.strip())
+        return 10
+    except (json.JSONDecodeError, SyntaxError, re.error, ValueError):
+        return 0
+
+
+def grade_combined(test_case, output):
+    """內容品質用模型判、語法對不對用程式判，等權重合分。"""
+    grade = grade_by_model(test_case, output)
+    syntax = grade_syntax(output, test_case)
+    return {
+        **grade,
+        "model_score": grade["score"],
+        "syntax_score": syntax,
+        "score": (grade["score"] + syntax) / 2,
+    }
+
+
+def run_test_case(test_case, grader=None, template=PROMPT_TEMPLATE, prefill=None):
     """跑一筆並評分。
 
     課程直接改寫 run_test_case 的內容，這裡改成傳入 grader，
     讓第 12 堂的 script 重跑時仍然看到硬編碼的 10 分。
     """
-    output = run_prompt(test_case)
+    output = run_prompt(test_case, template, prefill)
     if grader is None:
         return {"output": output, "test_case": test_case, "score": 10}
     grade = grader(test_case, output)
     return {"output": output, "test_case": test_case, **grade}
 
 
-def run_eval(dataset, grader=None):
+def run_eval(dataset, grader=None, template=PROMPT_TEMPLATE, prefill=None):
     """對整個資料集跑一輪。"""
-    return [run_test_case(test_case, grader) for test_case in dataset]
+    return [run_test_case(tc, grader, template, prefill) for tc in dataset]
 
 
 RESULTS_PATH = Path(__file__).parent / "results.json"

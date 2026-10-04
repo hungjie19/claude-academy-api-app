@@ -1,20 +1,26 @@
 [
   {
-    "task": "Write a Python function that extracts the AWS account ID from an ARN string"
+    "task": "Write a Python function that validates an AWS IAM username (must be 1-64 characters, alphanumeric and certain special characters only)",
+    "format": "python"
   },
   {
-    "task": "Write a JSON object representing an IAM policy that allows full S3 access"
+    "task": "Write a JSON object representing an AWS Lambda execution role trust policy",
+    "format": "json"
   },
   {
-    "task": "Write a regular expression that matches valid AWS S3 bucket names"
+    "task": "Write a regex pattern that matches valid AWS S3 bucket names",
+    "format": "regex"
   },
   {
-    "task": "Write a Python function that converts an AWS timestamp to a human-readable date format"
+    "task": "Write a Python function that parses an AWS CloudWatch log timestamp and returns the Unix timestamp",
+    "format": "python"
   },
   {
-    "task": "Write a JSON object representing an AWS Lambda function environment variables configuration"
+    "task": "Write a JSON object representing an AWS RDS database subnet group configuration",
+    "format": "json"
   },
   {
-    "task": "Write a regular expression that validates AWS access key IDs (format: AKIA followed by 16 alphanumeric characters)"
+    "task": "Write a regex pattern that extracts the region and account ID from an AWS ARN string",
+    "format": "regex"
   }
 ]
