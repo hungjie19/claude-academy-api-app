@@ -1,0 +1,33 @@
+"""課程的三個核心輔助函式（Day 20 第 4 堂）。
+
+後面每一堂都在 chat() 上加參數（system prompt、temperature、streaming...），
+所以這組函式放在共用模組，不要每支 script 重抄一次。
+"""
+
+import os
+
+from dotenv import load_dotenv
+
+from anthropic import Anthropic
+
+load_dotenv()
+
+client = Anthropic()
+model = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
+
+
+def add_user_message(messages, text):
+    messages.append({"role": "user", "content": text})
+
+
+def add_assistant_message(messages, text):
+    messages.append({"role": "assistant", "content": text})
+
+
+def chat(messages):
+    message = client.messages.create(
+        model=model,
+        max_tokens=1000,
+        messages=messages,
+    )
+    return message.content[0].text
