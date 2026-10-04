@@ -11,3 +11,6 @@ __pycache__/
 
 # macOS
 .DS_Store
+
+# 每次執行的產物（dataset.json 是固定輸入，要進版控）
+results.json
