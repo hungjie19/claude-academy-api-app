@@ -6,6 +6,9 @@ across Day 20/21/22 of a 30-day study schedule). One lesson at a time.
 ## Commits
 
 - Commit messages are **English**, conventional-commits format (`feat:`, `fix:`, `chore:`, `docs:`).
+- One lesson, one commit: `feat: class NN <topic>`. If a lesson changes `chat_helpers.py`,
+  that change belongs in the same commit as the lesson that introduced it — not batched
+  with later lessons.
 - Never commit unless explicitly asked. "OK" or "looks good" is not a commit instruction.
 - `.env` must never be committed. Check `git status` before every commit.
 
