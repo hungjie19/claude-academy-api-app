@@ -24,8 +24,10 @@ def add_assistant_message(messages, text):
     messages.append({"role": "assistant", "content": text})
 
 
-def chat(messages, system=None, temperature=None):
+def chat(messages, system=None, temperature=None, stop_sequences=None):
     params = {"model": model, "max_tokens": 1000, "messages": messages}
+    if stop_sequences:
+        params["stop_sequences"] = stop_sequences
     # API 不接受 system=None，只有真的有值時才塞進去
     if system:
         params["system"] = system
