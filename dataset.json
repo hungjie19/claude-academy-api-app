@@ -1,0 +1,20 @@
+[
+  {
+    "task": "Write a Python function that extracts the AWS account ID from an ARN string"
+  },
+  {
+    "task": "Write a JSON object representing an IAM policy that allows full S3 access"
+  },
+  {
+    "task": "Write a regular expression that matches valid AWS S3 bucket names"
+  },
+  {
+    "task": "Write a Python function that converts an AWS timestamp to a human-readable date format"
+  },
+  {
+    "task": "Write a JSON object representing an AWS Lambda function environment variables configuration"
+  },
+  {
+    "task": "Write a regular expression that validates AWS access key IDs (format: AKIA followed by 16 alphanumeric characters)"
+  }
+]
