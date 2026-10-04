@@ -24,10 +24,16 @@ def add_assistant_message(messages, text):
     messages.append({"role": "assistant", "content": text})
 
 
-def chat(messages, system=None):
+def chat(messages, system=None, temperature=None):
     params = {"model": model, "max_tokens": 1000, "messages": messages}
     # API 不接受 system=None，只有真的有值時才塞進去
     if system:
         params["system"] = system
+    # 課程寫 temperature=1.0 直接當參數傳，但 anthropic SDK 1.x 已經把
+    # temperature / top_p / top_k 從 messages.create() 的簽名移除
+    # （4.6 以後的世代送了會 400）。舊模型如 Haiku 4.5 仍然接受，
+    # 所以用 extra_body 直接塞進 request body 繞過 SDK 的簽名。
+    if temperature is not None:
+        params["extra_body"] = {"temperature": temperature}
     message = client.messages.create(**params)
     return message.content[0].text
