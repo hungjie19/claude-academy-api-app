@@ -99,3 +99,37 @@ add_duration_to_datetime_schema = {
 }
 
 TOOLS = [get_current_datetime_schema, add_duration_to_datetime_schema]
+
+
+# 第 24 堂：處理訊息區塊。
+# 啟用工具就是在 API 呼叫裡加 tools。Claude 決定用工具時，
+# 回應的 content 不再是一段文字，而是一串區塊：text 與 tool_use。
+from chat_helpers import add_user_message, client, model  # noqa: E402
+
+
+def send_with_tools(messages):
+    """把歷史和工具清單送出去，回傳完整的 response（不只取文字）。"""
+    return client.messages.create(
+        model=model,
+        max_tokens=1000,
+        messages=messages,
+        tools=TOOLS,
+    )
+
+
+def print_blocks(response):
+    """逐一看區塊。tool_use 區塊帶 id（追蹤用）、name、input（參數 dict）。"""
+    for block in response.content:
+        if block.type == "text":
+            print(f"[text] {block.text}")
+        elif block.type == "tool_use":
+            print(f"[tool_use] name={block.name} id={block.id} input={block.input}")
+
+
+if __name__ == "__main__":
+    messages = []
+    add_user_message(messages, "我想知道現在幾點，還有 3 天後是幾號？")
+    response = send_with_tools(messages)
+    # 歷史要整串原樣存回去，不能只存文字區塊（第 24 堂的重點）
+    messages.append({"role": "assistant", "content": response.content})
+    print_blocks(response)
