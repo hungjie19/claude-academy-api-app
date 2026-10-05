@@ -92,6 +92,33 @@ Guidelines:
 """
 
 
+def build_prompt_v4(prompt_inputs):
+    """第 18 堂：使用 XML 標籤建立結構。只把 v3 的輸入欄位包進標籤，其餘不動。
+
+    XML 買的是「界線清楚」：指示和資料分開，Claude 才分得出哪段是要處理的資料。
+    官方很誠實：簡單提示看不出明顯改善，內容越多、越混雜，標籤越有價值。
+    這個提示很短，預期分數變化會小。
+    """
+    return f"""
+Generate a 1 day meal plan for an athlete that meets their dietary restrictions.
+
+<athlete_information>
+- Height: {prompt_inputs["height"]}
+- Weight: {prompt_inputs["weight"]}
+- Goal: {prompt_inputs["goal"]}
+- Dietary restrictions: {prompt_inputs["restrictions"]}
+</athlete_information>
+
+Guidelines:
+1. Include accurate daily calorie amount
+2. Show protein, fat, and carb amounts
+3. Specify when to eat each meal
+4. Use only foods that fit restrictions
+5. List all portion sizes in grams
+6. Keep budget-friendly if mentioned
+"""
+
+
 def runner(build_prompt):
     """把一個 build_prompt_vN 包成 PromptEvaluator 要的 run_prompt_function。"""
 
