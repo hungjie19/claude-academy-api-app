@@ -63,6 +63,35 @@ Generate a 1 day meal plan for an athlete that meets their dietary restrictions.
 """
 
 
+def build_prompt_v3(prompt_inputs):
+    """第 17 堂：具體明確。在 v2 的指示句後面補上輸出品質指引。
+
+    官方分兩種指引：
+      1. 輸出品質指引——列出輸出該有的特質（長度、結構、要含哪些元素、語氣）
+      2. 流程步驟——要 Claude 照步驟系統性思考，留給複雜的判斷題
+
+    這堂用第一種。重點在「把我沒說但我預期的東西列出來」：
+    熱量要準、三大營養素要給、每餐幾點吃、份量用公克。
+    這是整組技巧裡分數跳最多的一堂。
+    """
+    return f"""
+Generate a 1 day meal plan for an athlete that meets their dietary restrictions.
+
+- Height: {prompt_inputs["height"]}
+- Weight: {prompt_inputs["weight"]}
+- Goal: {prompt_inputs["goal"]}
+- Dietary restrictions: {prompt_inputs["restrictions"]}
+
+Guidelines:
+1. Include accurate daily calorie amount
+2. Show protein, fat, and carb amounts
+3. Specify when to eat each meal
+4. Use only foods that fit restrictions
+5. List all portion sizes in grams
+6. Keep budget-friendly if mentioned
+"""
+
+
 def runner(build_prompt):
     """把一個 build_prompt_vN 包成 PromptEvaluator 要的 run_prompt_function。"""
 
