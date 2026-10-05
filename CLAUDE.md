@@ -23,7 +23,10 @@ across Day 20-25 of a 30-day study schedule). One lesson at a time.
   have gaps (09, 10). Their content lives in the vault notes.
 - The vault (`~/ai_session_summary`) is a separate repo. Never mix its commits with this
   repo's, even when one lesson updates both.
-- Never commit unless explicitly asked. "OK" or "looks good" is not a commit instruction.
+- Commit lesson and doc work in this repo without asking first — standing instruction
+  from the repo owner (2026-10-05). Still one lesson per commit, and still check
+  `git status` first. Anything beyond committing (pushing, rewriting history, deleting
+  files) needs an explicit ask.
 - `.env` must never be committed. Check `git status` before every commit.
 
 ## Docs
