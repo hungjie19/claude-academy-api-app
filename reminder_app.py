@@ -126,10 +126,56 @@ def print_blocks(response):
             print(f"[tool_use] name={block.name} id={block.id} input={block.input}")
 
 
+
+# 第 25 堂：傳送工具結果。
+# 名稱對應到實際函式。Claude 送來的 name 必須在這張表裡找得到。
+TOOL_FUNCTIONS = {
+    "get_current_datetime": get_current_datetime,
+    "add_duration_to_datetime": add_duration_to_datetime,
+}
+
+
+def build_tool_results(response):
+    """執行回應裡所有 tool_use，產生對應的 tool_result 區塊。
+
+    每個結果都要帶原本的 tool_use_id，Claude 靠它把結果對回請求。
+    函式丟錯時不要讓程式中斷：把錯誤訊息當成 is_error 結果送回，
+    Claude 看得到錯誤，可能會改參數重試（第 22 堂的設計）。
+    """
+    results = []
+    for block in response.content:
+        if block.type != "tool_use":
+            continue
+        try:
+            output = TOOL_FUNCTIONS[block.name](**block.input)
+            results.append({
+                "type": "tool_result",
+                "tool_use_id": block.id,
+                "content": str(output),
+                "is_error": False,
+            })
+        except Exception as e:
+            results.append({
+                "type": "tool_result",
+                "tool_use_id": block.id,
+                "content": str(e),
+                "is_error": True,
+            })
+    return results
+
 if __name__ == "__main__":
     messages = []
     add_user_message(messages, "我想知道現在幾點，還有 3 天後是幾號？")
+
     response = send_with_tools(messages)
-    # 歷史要整串原樣存回去，不能只存文字區塊（第 24 堂的重點）
     messages.append({"role": "assistant", "content": response.content})
     print_blocks(response)
+
+    # 工具結果放在 user 訊息裡
+    messages.append({"role": "user", "content": build_tool_results(response)})
+
+    # 送出工具結果後，後續請求仍要帶 TOOLS（Claude 需要 schema 理解歷史）
+    response = send_with_tools(messages)
+    messages.append({"role": "assistant", "content": response.content})
+    print_blocks(response)
+
