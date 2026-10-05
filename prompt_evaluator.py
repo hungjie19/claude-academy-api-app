@@ -161,11 +161,19 @@ class PromptEvaluator:
         # 反斜線，JSON 字串裡是非法跳脫，json.loads 會直接炸。
         response = client.messages.create(
             model=GRADER_MODEL,
-            max_tokens=1000,
+            max_tokens=2000,
             messages=[{"role": "user", "content": prompt}],
             output_config={"format": {"type": "json_schema", "schema": GRADER_SCHEMA}},
         )
         text = next(b.text for b in response.content if b.type == "text")
+        # structured outputs 保證「合法 JSON」，但保證不了「寫完了」：被 max_tokens
+        # 切斷的 JSON 一樣是壞的。第 16 堂就踩到——提示改好之後輸出變長，
+        # 評分理由跟著變長，1000 tokens 不夠，json.loads 丟 Unterminated string。
+        # 截斷要當成錯誤講清楚，不要讓它假扮成解析失敗。
+        if response.stop_reason == "max_tokens":
+            raise RuntimeError(
+                "評分模型的回應被 max_tokens 截斷，調高 _grade 的 max_tokens"
+            )
         return json.loads(text)
 
     def _write_report(self, results, report_file):

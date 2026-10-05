@@ -46,6 +46,23 @@ What should this person eat?
 """
 
 
+def build_prompt_v2(prompt_inputs):
+    """第 16 堂：清晰且直接。只改開頭那一行，其餘一字不動。
+
+    從問句「這個人應該吃什麼？」換成指示句，一句話同時交代三件事：
+    要採取的動作（generate）、要產出什麼（meal plan）、關鍵限制
+    （一天、運動員、符合飲食限制）。提示的第一行是整個請求裡最重要的部分。
+    """
+    return f"""
+Generate a 1 day meal plan for an athlete that meets their dietary restrictions.
+
+- Height: {prompt_inputs["height"]}
+- Weight: {prompt_inputs["weight"]}
+- Goal: {prompt_inputs["goal"]}
+- Dietary restrictions: {prompt_inputs["restrictions"]}
+"""
+
+
 def runner(build_prompt):
     """把一個 build_prompt_vN 包成 PromptEvaluator 要的 run_prompt_function。"""
 
@@ -72,3 +89,32 @@ def ensure_dataset(evaluator, num_cases=3):
         output_file=DATASET_PATH,
         num_cases=num_cases,
     )
+
+
+def compare(evaluator, versions):
+    """同一次執行裡跑多個版本的提示，印出分數與差距，回傳 {label: 平均分}。
+
+    為什麼要重跑舊版、不直接引用上一堂印出來的數字：模型輸出有隨機性，
+    跨執行比較等於混進「不同時間跑的」這個變數。要主張「這一招有效」，
+    前後兩版就得在同一次執行裡跑。
+    """
+    from prompt_evaluator import average_score
+
+    averages = {}
+    for label, build_prompt in versions.items():
+        results = evaluator.run_evaluation(
+            run_prompt_function=runner(build_prompt),
+            dataset_file=DATASET_PATH,
+            extra_criteria=EXTRA_CRITERIA,
+            report_file=REPORT_PATH.with_name(f"meal_plan_report_{label}.html"),
+        )
+        print(f"[{label}]")
+        for i, r in enumerate(results, 1):
+            inputs = r["test_case"]["prompt_inputs"]
+            print(
+                f"  {i}. score={r['score']:<5} {inputs['goal']} / {inputs['restrictions']}"
+            )
+            print(f"     缺點：{'; '.join(r['weaknesses'][:2])}")
+        averages[label] = average_score(results)
+        print(f"  Average score: {averages[label]:.2f}\n")
+    return averages

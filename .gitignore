@@ -16,4 +16,4 @@ __pycache__/
 results.json
 
 # 評估報告（每次執行重新產生）
-meal_plan_report.html
+meal_plan_report*.html
