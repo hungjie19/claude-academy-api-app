@@ -24,6 +24,9 @@ uv run smoke_test.py   # verify the key, the SDK and the model id all work
 | `smoke_test.py` | Minimal `messages.create` call; prints text, `stop_reason`, token usage |
 | `list_models.py` | Lists the models this API key can actually call |
 | `chat_helpers.py` | Shared `add_user_message` / `add_assistant_message` / `chat` |
+| `eval_pipeline.py` | Lesson 11-14 evaluation pipeline (code-generation task) |
+| `prompt_evaluator.py` | Lesson 15+ `PromptEvaluator`: dataset generation, concurrent runs, model grading, HTML report |
+| `meal_plan_prompts.py` | Lesson 15-19 shared setup and one `build_prompt_vN` per lesson |
 | `class_NN_*.py` | One file per course lesson, numbered course-wide (1-67) |
 
 Lessons that build one program over several classes share a plain-named file instead
@@ -38,7 +41,7 @@ in the notes; this table only tracks how far the code has got.
 | Day | Lessons | Sections | Status |
 |---|---|---|---|
 | Day 20 | 1-14 | Accessing Claude via the API / Prompt evaluation | Done through lesson 14 (09, 10 are theory-only) |
-| Day 21 | 15-31 | Prompt engineering / Tool use | Not started |
+| Day 21 | 15-31 | Prompt engineering / Tool use | In progress — lesson 15 (baseline 2.33/10) |
 | Day 22 | 32-38 | RAG and agentic search | Not started |
 | Day 23 | 39-46 | Claude's capabilities | Not started |
 | Day 24 | 47-56 | Model Context Protocol | Not started |

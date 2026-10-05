@@ -1,0 +1,74 @@
+"""第 15-19 堂共用：餐食計畫這個任務的設定與各版本提示。
+
+這五堂是同一個實驗：任務、資料集、評分標準全部固定不動，**每堂只改提示的一件事**，
+看平均分往哪裡走。所以這些共用的東西放在這裡，每堂的 script 只負責
+「挑一個版本的提示、跑、印出跟上一版的差距」。
+
+每新增一版提示就往下加一個 build_prompt_vN，舊的不要刪——
+分數比較要能隨時重跑任一版。
+"""
+
+from pathlib import Path
+
+from chat_helpers import add_user_message, chat
+
+DATASET_PATH = Path(__file__).parent / "meal_plan_dataset.json"
+REPORT_PATH = Path(__file__).parent / "meal_plan_report.html"
+
+TASK_DESCRIPTION = "Write a compact, concise 1 day meal plan for a single athlete"
+
+PROMPT_INPUTS_SPEC = {
+    "height": "Athlete's height in cm",
+    "weight": "Athlete's weight in kg",
+    "goal": "Goal of the athlete",
+    "restrictions": "Dietary restrictions of the athlete",
+}
+
+# 資料集的 solution_criteria 是 Claude 自己生的，不一定涵蓋我真正在意的東西，
+# 所以這幾項直接告訴評分模型。這也是整個實驗的「及格線」定義。
+EXTRA_CRITERIA = """
+The output should include:
+- Daily caloric total
+- Macronutrient breakdown
+- Meals with exact foods, portions, and timing
+"""
+
+
+def build_prompt_v1(prompt_inputs):
+    """第 15 堂的基準線。刻意寫得很弱：一句問句，什麼要求都沒講。"""
+    return f"""
+What should this person eat?
+
+- Height: {prompt_inputs["height"]}
+- Weight: {prompt_inputs["weight"]}
+- Goal: {prompt_inputs["goal"]}
+- Dietary restrictions: {prompt_inputs["restrictions"]}
+"""
+
+
+def runner(build_prompt):
+    """把一個 build_prompt_vN 包成 PromptEvaluator 要的 run_prompt_function。"""
+
+    def run_prompt(prompt_inputs):
+        messages = []
+        add_user_message(messages, build_prompt(prompt_inputs))
+        return chat(messages, max_tokens=2000)
+
+    return run_prompt
+
+
+def ensure_dataset(evaluator, num_cases=3):
+    """資料集只生一次就定住。
+
+    每堂重新生資料集的話，分數變化裡混了「換了題目」這個變數，
+    2.32 -> 3.92 這種比較就不能用了。
+    """
+    if DATASET_PATH.exists():
+        return
+    print(f"{DATASET_PATH.name} 不存在，生成 {num_cases} 筆測試案例...")
+    evaluator.generate_dataset(
+        task_description=TASK_DESCRIPTION,
+        prompt_inputs_spec=PROMPT_INPUTS_SPEC,
+        output_file=DATASET_PATH,
+        num_cases=num_cases,
+    )

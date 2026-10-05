@@ -14,3 +14,6 @@ __pycache__/
 
 # 每次執行的產物（dataset.json 是固定輸入，要進版控）
 results.json
+
+# 評估報告（每次執行重新產生）
+meal_plan_report.html

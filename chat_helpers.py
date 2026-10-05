@@ -24,8 +24,10 @@ def add_assistant_message(messages, text):
     messages.append({"role": "assistant", "content": text})
 
 
-def chat(messages, system=None, temperature=None, stop_sequences=None):
-    params = {"model": model, "max_tokens": 1000, "messages": messages}
+def chat(messages, system=None, temperature=None, stop_sequences=None, max_tokens=1000):
+    # max_tokens 從第 15 堂起要調大：餐食計畫帶熱量、三大營養素、份量與時間，
+    # 1000 tokens 會被截斷，而截斷的輸出會讓評估分數測到的是截斷、不是提示。
+    params = {"model": model, "max_tokens": max_tokens, "messages": messages}
     if stop_sequences:
         params["stop_sequences"] = stop_sequences
     # API 不接受 system=None，只有真的有值時才塞進去

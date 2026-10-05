@@ -1,0 +1,47 @@
+[
+  {
+    "task": "Create a 1-day meal plan for a lightweight endurance athlete with high caloric needs and no dietary restrictions.",
+    "solution_criteria": [
+      "Plan includes at least 4 meals/snacks spread throughout the day",
+      "Total estimated calories are between 2800-3200 kcal for a 165cm, 55kg athlete",
+      "Meals emphasize carbohydrates and lean proteins suitable for endurance training",
+      "Plan is formatted concisely with meal times and brief descriptions"
+    ],
+    "prompt_inputs": {
+      "height": "165",
+      "weight": "55",
+      "goal": "endurance training",
+      "restrictions": "none"
+    }
+  },
+  {
+    "task": "Create a 1-day meal plan for a heavyweight strength athlete aiming to build muscle while accommodating a vegan diet.",
+    "solution_criteria": [
+      "Plan includes 5-6 meals distributed across the day to support muscle building",
+      "Total estimated calories are between 3200-3600 kcal for a 188cm, 95kg athlete",
+      "All protein sources are plant-based (legumes, tofu, nuts, seeds, plant proteins)",
+      "Meals are concise with sufficient protein density (targeting ~25-35g per main meal)"
+    ],
+    "prompt_inputs": {
+      "height": "188",
+      "weight": "95",
+      "goal": "muscle building",
+      "restrictions": "vegan"
+    }
+  },
+  {
+    "task": "Create a 1-day meal plan for a sprinter focused on speed and power while avoiding dairy and gluten.",
+    "solution_criteria": [
+      "Plan includes 4 meals/snacks optimized for high-intensity performance",
+      "Total estimated calories are between 2400-2800 kcal for a 178cm, 72kg athlete",
+      "All meals are both dairy-free and gluten-free with clear ingredient alternatives",
+      "Meals include adequate carbs and protein to support explosive athletic performance"
+    ],
+    "prompt_inputs": {
+      "height": "178",
+      "weight": "72",
+      "goal": "speed and power",
+      "restrictions": "dairy-free, gluten-free"
+    }
+  }
+]
