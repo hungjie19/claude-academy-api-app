@@ -244,9 +244,34 @@ def run_conversation(messages):
     return messages
 
 
+
+# 第 29 堂：細粒度工具呼叫（串流）。
+# 串流時，工具參數會一小段一小段到達，事件型別是 input_json：
+#   partial_json = 這一小段
+#   snapshot     = 目前為止累積起來的完整 JSON 字串
+# 注意：不確定 API 端的開關參數（講義的 fine_grained=True），這裡只做串流。
+import json
+
+
+def stream_with_tools(messages):
+    """串流送出請求，印出工具參數逐段到達的過程，回傳最後的完整 message。"""
+    with client.messages.stream(
+        model=model,
+        max_tokens=1000,
+        messages=messages,
+        tools=TOOLS,
+    ) as stream:
+        for chunk in stream:
+            if chunk.type == "input_json":
+                print(f"[input_json] partial={chunk.partial_json!r}")
+                # SDK 的 snapshot 已經是解析過的 dict，不是 JSON 字串，不要再 json.loads
+                print(f"  snapshot={chunk.snapshot}")
+        return stream.get_final_message()
+
+
 if __name__ == "__main__":
     messages = []
-    # 兩個彼此獨立的請求，都帶齊參數、不依賴對方的結果。
-    # 如果 Claude 在第一輪就送出兩個 tool_use，就是「同一輪並行」。
-    add_user_message(messages, "現在幾點？另外，2050-01-01 00:00:00 之後 177 天是幾號？")
-    run_conversation(messages)
+    add_user_message(messages, "幫我設定一個看醫生的提醒。時間是 2050 年 1 月 1 日之後的 177 天。")
+    response = stream_with_tools(messages)
+    messages.append({"role": "assistant", "content": response.content})
+    print_blocks(response)
