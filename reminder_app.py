@@ -269,9 +269,82 @@ def stream_with_tools(messages):
         return stream.get_final_message()
 
 
+
+# 第 30 堂：文字編輯工具（內建工具）。
+# schema 是內建的，只帶一小片版本字串；實作（真的讀寫檔案）要自己寫。
+# 版本字串依模型而異，講義只列到 Claude 3.7。我們用的模型不在列表裡，
+# 所以這裡不猜字串，查不到就報錯。去官方文件查 Haiku 4.5 對應的版本後再填。
+from pathlib import Path
+
+# 官方 Tool reference：text_editor_20250728 給 Claude 4 以後，text_editor_20250124 給更早的模型。
+TEXT_EDITOR_VERSIONS = {
+    "claude-haiku-4-5": "text_editor_20250728",
+    "claude-3-7-sonnet": "text_editor_20250124",
+    "claude-3-5-sonnet": "text_editor_20241022",
+}
+
+# 官方文件寫的工具名稱。舊版本的名稱未驗證，只確認了這個。
+TEXT_EDITOR_NAME = "str_replace_based_edit_tool"
+
+SANDBOX = Path(__file__).parent / "sandbox"
+
+
+def get_text_edit_tool(model_id):
+    for prefix, version in TEXT_EDITOR_VERSIONS.items():
+        if model_id.startswith(prefix):
+            return {"type": version, "name": TEXT_EDITOR_NAME}
+    raise ValueError(f"找不到 {model_id} 的文字編輯工具版本字串，請查官方文件後補進 TEXT_EDITOR_VERSIONS。")
+
+
+def _safe_path(path):
+    """只允許在 sandbox 底下操作，擋掉 ../ 跳出去。"""
+    target = (SANDBOX / path).resolve()
+    if SANDBOX.resolve() not in target.parents and target != SANDBOX.resolve():
+        raise ValueError(f"path 必須在 sandbox 底下，收到 {path!r}。")
+    return target
+
+
+def str_replace_editor(command, path, old_str=None, new_str=None, file_text=None, insert_line=None, view_range=None):
+    """實作文字編輯工具的幾個指令。undo_edit 這堂先不做。
+
+    回傳的字串會被包成 tool_result 送回 Claude，所以錯誤也要用文字講清楚。
+    """
+    target = _safe_path(path)
+
+    if command == "view":
+        if target.is_dir():
+            return "\n".join(sorted(p.name for p in target.iterdir()))
+        lines = target.read_text(encoding="utf-8").splitlines()
+        return "\n".join(f"{i}: {line}" for i, line in enumerate(lines, 1))
+
+    if command == "create":
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(file_text or "", encoding="utf-8")
+        return f"已建立 {path}"
+
+    if command == "str_replace":
+        text = target.read_text(encoding="utf-8")
+        count = text.count(old_str)
+        if count != 1:
+            return f"old_str 要剛好出現一次，實際出現 {count} 次。請提供更長、更獨特的片段。"
+        target.write_text(text.replace(old_str, new_str), encoding="utf-8")
+        return f"已替換 {path} 中的文字"
+
+    if command == "insert":
+        lines = target.read_text(encoding="utf-8").splitlines(keepends=True)
+        lines.insert(insert_line, new_str + "\n")
+        target.write_text("".join(lines), encoding="utf-8")
+        return f"已在 {path} 第 {insert_line} 行後插入"
+
+    return f"不支援的指令 {command!r}，可用：view、create、str_replace、insert。"
+
+
+TOOL_FUNCTIONS[TEXT_EDITOR_NAME] = str_replace_editor
+
+
 if __name__ == "__main__":
     messages = []
-    add_user_message(messages, "幫我設定一個看醫生的提醒。時間是 2050 年 1 月 1 日之後的 177 天。")
-    response = stream_with_tools(messages)
-    messages.append({"role": "assistant", "content": response.content})
-    print_blocks(response)
+    add_user_message(messages, "建立 ./notes.txt，內容寫「看醫生」，然後把它改成「看牙醫」。")
+    # 文字編輯工具的 schema 要依模型選；查不到版本字串時會在這裡報錯
+    text_tool = get_text_edit_tool(model)
+    print(f"text editor schema: {text_tool}")

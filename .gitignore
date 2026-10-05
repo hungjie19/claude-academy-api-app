@@ -17,3 +17,6 @@ results.json
 
 # 評估報告（每次執行重新產生）
 meal_plan_report*.html
+
+# 文字編輯工具的沙盒（第 30 堂，執行時產生）
+sandbox/
