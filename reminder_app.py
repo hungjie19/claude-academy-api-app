@@ -163,19 +163,43 @@ def build_tool_results(response):
             })
     return results
 
+
+# 第 27 堂：實作多輪對話。
+# 怎麼知道 Claude 還要用工具？看 stop_reason：是 "tool_use" 就繼續，否則結束。
+def text_from_message(message):
+    """只抽出文字區塊，給使用者看。"""
+    return "\n".join(block.text for block in message.content if block.type == "text")
+
+
+def run_conversation(messages):
+    """迴圈直到 Claude 不再要求工具。Claude 一個問題可能要用好幾次工具。
+
+    每一輪是一次獨立的 API 請求。log 會印出：
+      [第 N 輪] 依原始順序的區塊（text / tool_use）
+      [tool_result] 工具實際回傳的內容
+    """
+    round_no = 0
+    while True:
+        round_no += 1
+        response = send_with_tools(messages)
+        # 整串 content 存回歷史，不只存文字
+        messages.append({"role": "assistant", "content": response.content})
+
+        print(f"\n[第 {round_no} 輪] stop_reason={response.stop_reason}")
+        print_blocks(response)
+
+        if response.stop_reason != "tool_use":
+            break
+
+        results = build_tool_results(response)
+        for r in results:
+            print(f"[tool_result] id={r['tool_use_id']} is_error={r['is_error']} content={r['content']}")
+        messages.append({"role": "user", "content": results})
+
+    return messages
+
+
 if __name__ == "__main__":
     messages = []
-    add_user_message(messages, "我想知道現在幾點，還有 3 天後是幾號？")
-
-    response = send_with_tools(messages)
-    messages.append({"role": "assistant", "content": response.content})
-    print_blocks(response)
-
-    # 工具結果放在 user 訊息裡
-    messages.append({"role": "user", "content": build_tool_results(response)})
-
-    # 送出工具結果後，後續請求仍要帶 TOOLS（Claude 需要 schema 理解歷史）
-    response = send_with_tools(messages)
-    messages.append({"role": "assistant", "content": response.content})
-    print_blocks(response)
-
+    add_user_message(messages, "從今天起 103 天後是星期幾？")
+    run_conversation(messages)
