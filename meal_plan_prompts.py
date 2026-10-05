@@ -119,6 +119,80 @@ Guidelines:
 """
 
 
+# 第 19 堂的範例。用資料集以外的運動員，避免評估時等於把答案給模型。
+# 數字已粗略核對：各餐加總約 2,350 kcal、P 130g、C 320g、F 63g，跟目標大致一致。
+EXAMPLE_INPUT = """- Height: 170
+- Weight: 70
+- Goal: endurance training
+- Dietary restrictions: none"""
+
+EXAMPLE_OUTPUT = """Daily totals: about 2,350 kcal | Protein 130 g | Carbs 320 g | Fat 63 g
+
+07:00 Breakfast (550 kcal; P 25 g / C 80 g / F 15 g)
+- Rolled oats 80 g (dry)
+- Banana 120 g
+- Whole milk 250 ml
+
+10:00 Snack (250 kcal; P 10 g / C 40 g / F 5 g)
+- Plain yogurt 150 g
+- Apple 150 g
+
+12:30 Lunch (650 kcal; P 40 g / C 80 g / F 18 g)
+- Chicken breast 150 g (cooked)
+- Brown rice 200 g (cooked)
+- Broccoli 150 g
+- Olive oil 5 g
+
+16:00 Snack (300 kcal; P 15 g / C 50 g / F 5 g)
+- Whole-wheat toast 2 slices
+- Peanut butter 10 g
+
+19:00 Dinner (600 kcal; P 40 g / C 70 g / F 20 g)
+- Salmon 150 g (cooked)
+- Sweet potato 200 g
+- Spinach 100 g"""
+
+
+def build_prompt_v5(prompt_inputs):
+    """第 19 堂：提供範例。在 v4 前面加一組 sample_input / ideal_output。
+
+    範例的作用是示範：格式、份量單位、時間、以及各餐加總要對得上整日目標。
+    這是「展示而非描述」，比多寫一條指引更具體。
+    範例外面一樣用 XML 包，跟第 18 堂接起來。
+    """
+    return f"""
+Generate a 1 day meal plan for an athlete that meets their dietary restrictions.
+
+Here is an example of the output we want.
+
+<example>
+<sample_input>
+{EXAMPLE_INPUT}
+</sample_input>
+<ideal_output>
+{EXAMPLE_OUTPUT}
+</ideal_output>
+This example lists each meal with its time, exact grams, and per-meal macros,
+and the meals add up to the daily totals stated at the top.
+</example>
+
+<athlete_information>
+- Height: {prompt_inputs["height"]}
+- Weight: {prompt_inputs["weight"]}
+- Goal: {prompt_inputs["goal"]}
+- Dietary restrictions: {prompt_inputs["restrictions"]}
+</athlete_information>
+
+Guidelines:
+1. Include accurate daily calorie amount
+2. Show protein, fat, and carb amounts
+3. Specify when to eat each meal
+4. Use only foods that fit restrictions
+5. List all portion sizes in grams
+6. Keep budget-friendly if mentioned
+"""
+
+
 def runner(build_prompt):
     """把一個 build_prompt_vN 包成 PromptEvaluator 要的 run_prompt_function。"""
 
