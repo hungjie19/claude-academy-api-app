@@ -84,7 +84,9 @@ GRADER_SCHEMA = {
         "strengths": {"type": "array", "items": {"type": "string"}},
         "weaknesses": {"type": "array", "items": {"type": "string"}},
         "reasoning": {"type": "string"},
-        "score": {"type": "number"},
+        # 上下界一定要宣告：只寫 number 的話評分模型偶爾會用百分制回答
+        # （實際撞到過 68 和 0.4），平均分直接被污染。
+        "score": {"type": "number", "minimum": 1, "maximum": 10},
     },
     "required": ["strengths", "weaknesses", "reasoning", "score"],
     "additionalProperties": False,
