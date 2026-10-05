@@ -168,6 +168,10 @@ def print_blocks(response):
             print(f"[text] {block.text}")
         elif block.type == "tool_use":
             print(f"[tool_use] name={block.name} id={block.id} input={block.input}")
+        else:
+            # 網路搜尋等伺服器端工具會產生 server_tool_use、web_search_tool_result 等區塊，
+            # 不是我們執行的，但 log 要看得到它們
+            print(f"[{block.type}]")
 
 
 
@@ -342,9 +346,32 @@ def str_replace_editor(command, path, old_str=None, new_str=None, file_text=None
 TOOL_FUNCTIONS[TEXT_EDITOR_NAME] = str_replace_editor
 
 
+
+# 第 31 堂：網路搜尋工具（伺服器端工具）。
+# 不用寫實作：搜尋由 Anthropic 那邊執行，我們只給 schema。
+# 組織要先在設定控制台啟用網路搜尋（講義的 privacy 頁面）。
+# 官方 tool reference 另列了 web_search_20260209、web_search_20260318 等較新版本，這裡沿用講義的 20250305。
+web_search_schema = {
+    "type": "web_search_20250305",
+    "name": "web_search",
+    "max_uses": 5,
+    # "allowed_domains": ["nih.gov"],  # 要權威來源時再打開
+}
+
 if __name__ == "__main__":
     messages = []
-    add_user_message(messages, "建立 ./notes.txt，內容寫「看醫生」，然後把它改成「看牙醫」。")
-    # 文字編輯工具的 schema 要依模型選；查不到版本字串時會在這裡報錯
-    text_tool = get_text_edit_tool(model)
-    print(f"text editor schema: {text_tool}")
+    add_user_message(messages, "用網路搜尋查一下 Claude Haiku 4.5 的 API 定價。")
+    # 伺服器端工具不在 TOOL_FUNCTIONS 裡；stop_reason 不是 tool_use 時迴圈就會結束
+    tools_for_run = [web_search_schema]
+    while True:
+        response = client.messages.create(
+            model=model,
+            max_tokens=2000,
+            messages=messages,
+            tools=tools_for_run,
+        )
+        messages.append({"role": "assistant", "content": response.content})
+        print(f"\n[stop_reason={response.stop_reason}]")
+        print_blocks(response)
+        if response.stop_reason != "tool_use":
+            break
