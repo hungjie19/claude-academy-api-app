@@ -74,6 +74,8 @@ You are grading the output of a prompt that is under evaluation.
 
 Judge how well the output satisfies the criteria for these exact inputs.
 Be strict: a missing required element is a real deduction, not a rounding error.
+
+Give "score" as a number from 1 to 10. Do not use any other scale.
 """
 
 # 跟 eval_pipeline 同一個教訓：只問分數的話模型一律回 6 分左右，
@@ -84,9 +86,7 @@ GRADER_SCHEMA = {
         "strengths": {"type": "array", "items": {"type": "string"}},
         "weaknesses": {"type": "array", "items": {"type": "string"}},
         "reasoning": {"type": "string"},
-        # 上下界一定要宣告：只寫 number 的話評分模型偶爾會用百分制回答
-        # （實際撞到過 68 和 0.4），平均分直接被污染。
-        "score": {"type": "number", "minimum": 1, "maximum": 10},
+        "score": {"type": "number"},
     },
     "required": ["strengths", "weaknesses", "reasoning", "score"],
     "additionalProperties": False,
@@ -161,6 +161,16 @@ class PromptEvaluator:
         )
         # 用第 8 堂的 structured outputs，不用預填 ```json：評分理由常引用
         # 反斜線，JSON 字串裡是非法跳脫，json.loads 會直接炸。
+        # structured outputs 不接受 number 的 minimum / maximum（會 400），
+        # 所以範圍只能在這裡檢查。評分模型偶爾會用百分制回答（實際撞到過 68、0.4、12），
+        # 超出就重打，三次還是超出才丟錯，不讓壞分數進平均。
+        for _ in range(3):
+            grade = self._request_grade(prompt)
+            if 1 <= grade["score"] <= 10:
+                return grade
+        raise ValueError(f"評分連續三次超出 1-10：最後一次 {grade['score']}")
+
+    def _request_grade(self, prompt):
         response = client.messages.create(
             model=GRADER_MODEL,
             max_tokens=2000,
@@ -174,7 +184,7 @@ class PromptEvaluator:
         # 截斷要當成錯誤講清楚，不要讓它假扮成解析失敗。
         if response.stop_reason == "max_tokens":
             raise RuntimeError(
-                "評分模型的回應被 max_tokens 截斷，調高 _grade 的 max_tokens"
+                "評分模型的回應被 max_tokens 截斷，調高 _request_grade 的 max_tokens"
             )
         return json.loads(text)
 
