@@ -48,6 +48,24 @@ def add_duration_to_datetime(datetime_str, duration, unit):
     return result.strftime("%Y-%m-%d %H:%M:%S")
 
 
+
+# 第 28 堂：第三個工具。提醒先存在記憶體的 list 裡，沒有真的發通知。
+REMINDERS = []
+
+
+def set_reminder(reminder_text, datetime_str):
+    """設定一則提醒。datetime_str 要是 'YYYY-MM-DD HH:MM:SS'。"""
+    if not reminder_text or not reminder_text.strip():
+        raise ValueError("reminder_text 不能是空的，請提供提醒內容。")
+    try:
+        remind_at = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
+    except (TypeError, ValueError) as e:
+        raise ValueError(
+            f"datetime_str 格式錯誤，需要 'YYYY-MM-DD HH:MM:SS'，收到 {datetime_str!r}。"
+        ) from e
+    REMINDERS.append({"text": reminder_text, "at": remind_at})
+    return f"已設定提醒：{remind_at:%Y-%m-%d %H:%M} — {reminder_text}"
+
 # 第 23 堂：工具結構（schema）。
 # Claude 看不到 Python 函式，只看得到這份描述：名稱、用途、參數格式。
 # 名稱與參數名要跟上面的函式一致，enum 要跟 UNITS 的 key 一致。
@@ -98,7 +116,33 @@ add_duration_to_datetime_schema = {
     },
 }
 
-TOOLS = [get_current_datetime_schema, add_duration_to_datetime_schema]
+set_reminder_schema = {
+    "name": "set_reminder",
+    "description": (
+        "為使用者設定一則提醒。使用者說出要在哪個時間提醒時使用。"
+        "時間如果是相對的（例如「177 天後」），先用 add_duration_to_datetime 算出日期，再呼叫這個工具。"
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "reminder_text": {
+                "type": "string",
+                "description": "提醒的內容，例如「看醫生」。",
+            },
+            "datetime_str": {
+                "type": "string",
+                "description": "提醒時間，格式 'YYYY-MM-DD HH:MM:SS'。",
+            },
+        },
+        "required": ["reminder_text", "datetime_str"],
+    },
+}
+
+TOOLS = [
+    get_current_datetime_schema,
+    add_duration_to_datetime_schema,
+    set_reminder_schema,
+]
 
 
 # 第 24 堂：處理訊息區塊。
@@ -132,6 +176,7 @@ def print_blocks(response):
 TOOL_FUNCTIONS = {
     "get_current_datetime": get_current_datetime,
     "add_duration_to_datetime": add_duration_to_datetime,
+    "set_reminder": set_reminder,
 }
 
 
@@ -201,5 +246,7 @@ def run_conversation(messages):
 
 if __name__ == "__main__":
     messages = []
-    add_user_message(messages, "從今天起 103 天後是星期幾？")
+    # 兩個彼此獨立的請求，都帶齊參數、不依賴對方的結果。
+    # 如果 Claude 在第一輪就送出兩個 tool_use，就是「同一輪並行」。
+    add_user_message(messages, "現在幾點？另外，2050-01-01 00:00:00 之後 177 天是幾號？")
     run_conversation(messages)
