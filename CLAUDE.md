@@ -1,14 +1,28 @@
 # claude-academy-api-app
 
 Code for the Claude Academy course "Building with the Claude API" (67 lessons, split
-across Day 20/21/22 of a 30-day study schedule). One lesson at a time.
+across Day 20-25 of a 30-day study schedule). One lesson at a time.
 
 ## Commits
 
 - Commit messages are **English**, conventional-commits format (`feat:`, `fix:`, `chore:`, `docs:`).
-- One lesson, one commit: `feat: class NN <topic>`. If a lesson changes `chat_helpers.py`,
-  that change belongs in the same commit as the lesson that introduced it — not batched
-  with later lessons.
+- One lesson, one commit: `feat: class NN <topic>`. This holds whether the lesson adds a new
+  file or only edits a file an earlier lesson created — the commit *is* that lesson's record.
+- Because the commit is the record, never keep a per-lesson snapshot copy of a file that a
+  later lesson rewrites. No `class_23_*.py` sitting next to `class_24_*.py` with 90% the
+  same code. To get a lesson's version back, use git:
+
+  ```bash
+  git log --oneline -- reminder_app.py       # the lessons that touched this file
+  git checkout <commit> -- reminder_app.py   # restore that lesson's version
+  ```
+
+- If a lesson changes `chat_helpers.py`, that change belongs in the same commit as the
+  lesson that introduced it — not batched with later lessons.
+- Lessons with no code (quizzes, pure theory) get no commit, which is why the lesson numbers
+  have gaps (09, 10). Their content lives in the vault notes.
+- The vault (`~/ai_session_summary`) is a separate repo. Never mix its commits with this
+  repo's, even when one lesson updates both.
 - Never commit unless explicitly asked. "OK" or "looks good" is not a commit instruction.
 - `.env` must never be committed. Check `git status` before every commit.
 
@@ -32,6 +46,15 @@ across Day 20/21/22 of a 30-day study schedule). One lesson at a time.
 
 - Lesson files are `class_NN_topic.py`, where `NN` is the **course-wide** lesson number
   (1-67), not the per-day one. Day grouping lives in the vault notes, not here.
+- Two kinds of lesson file:
+  - **Standalone exercise** — `class_NN_topic.py`, runnable on its own. The default.
+  - **Incremental project** — when consecutive lessons build one growing program, it gets a
+    plain filename with no `class_NN` prefix (e.g. `reminder_app.py`), and each lesson edits
+    it in place and commits as `feat: class NN <topic>`. Keep it one file until that
+    genuinely hurts; a split into modules happens inside that lesson's own commit.
+- Evaluation scores measured while working through a lesson belong in the vault note, not
+  here. `results.json` is gitignored on purpose: the repo holds the runnable prompt, the
+  note holds the number it produced.
 - `chat_helpers.py` holds the shared `add_user_message` / `add_assistant_message` /
   `chat` functions. Each lesson that adds a parameter to `chat()` edits that file;
   earlier lesson scripts must keep working, so new parameters get defaults.

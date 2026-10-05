@@ -26,10 +26,20 @@ uv run smoke_test.py   # verify the key, the SDK and the model id all work
 | `chat_helpers.py` | Shared `add_user_message` / `add_assistant_message` / `chat` |
 | `class_NN_*.py` | One file per course lesson, numbered course-wide (1-67) |
 
+Lessons that build one program over several classes share a plain-named file instead
+(`reminder_app.py` for lessons 20-29, for example); each class is one commit on that file,
+so `git log --oneline -- <file>` is the lesson-by-lesson history.
+
 ## Progress
 
-| Day | Sections | Status |
-|---|---|---|
-| Day 20 | Accessing Claude via the API / Prompt evaluation / Prompt engineering | In progress — lesson 5 of 19 |
-| Day 21 | Tool use / RAG / Claude's capabilities | Not started |
-| Day 22 | MCP / Anthropic applications / Agents and workflows | Not started |
+The vault notes split the 67 lessons across six study days (Day 20-25). That grouping lives
+in the notes; this table only tracks how far the code has got.
+
+| Day | Lessons | Sections | Status |
+|---|---|---|---|
+| Day 20 | 1-14 | Accessing Claude via the API / Prompt evaluation | Done through lesson 14 (09, 10 are theory-only) |
+| Day 21 | 15-31 | Prompt engineering / Tool use | Not started |
+| Day 22 | 32-38 | RAG and agentic search | Not started |
+| Day 23 | 39-46 | Claude's capabilities | Not started |
+| Day 24 | 47-56 | Model Context Protocol | Not started |
+| Day 25 | 57-67 | Anthropic applications / Agents and workflows | Not started |
