@@ -1,4 +1,4 @@
-"""Day 20 第 8 堂：結構化資料。
+"""第 8 堂：結構化資料。
 
 場景：做一個產生 AWS EventBridge 規則的 App，使用者要能直接複製整段 JSON。
 但 Claude 預設很愛幫忙——把 JSON 包進 markdown 程式碼區塊，前後再加說明。

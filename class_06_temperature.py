@@ -1,4 +1,4 @@
-"""Day 20 第 6 堂：Temperature。
+"""第 6 堂：Temperature。
 
 生成三步：Tokenization -> Prediction（下一個 token 的機率）-> Sampling（依機率挑一個）。
 temperature 調的是第三步的機率分佈：接近 0 幾乎總是挑機率最高的，接近 1 則分散。

@@ -1,4 +1,4 @@
-"""課程的三個核心輔助函式（Day 20 第 4 堂）。
+"""課程的三個核心輔助函式（第 4 堂）。
 
 後面每一堂都在 chat() 上加參數（system prompt、temperature、streaming...），
 所以這組函式放在共用模組，不要每支 script 重抄一次。

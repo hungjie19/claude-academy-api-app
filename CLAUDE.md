@@ -1,7 +1,6 @@
 # claude-academy-api-app
 
-Code for the Claude Academy course "Building with the Claude API" (67 lessons, split
-across Day 20-25 of a 30-day study schedule). One lesson at a time.
+Code for the Claude Academy course "Building with the Claude API" (67 lessons). One lesson at a time.
 
 ## Commits
 
@@ -20,9 +19,9 @@ across Day 20-25 of a 30-day study schedule). One lesson at a time.
 - If a lesson changes `chat_helpers.py`, that change belongs in the same commit as the
   lesson that introduced it — not batched with later lessons.
 - Lessons with no code (quizzes, pure theory) get no commit, which is why the lesson numbers
-  have gaps (09, 10). Their content lives in the vault notes.
-- The vault (`~/ai_session_summary`) is a separate repo. Never mix its commits with this
-  repo's, even when one lesson updates both.
+  have gaps (09, 10). Their content lives outside this repo.
+- Notes live in a separate private repo. Never mix its commits with this repo's, even when
+  one lesson updates both.
 - Commit lesson and doc work in this repo without asking first — standing instruction
   from the repo owner (2026-10-05). Still one lesson per commit, and still check
   `git status` first. Anything beyond committing (pushing, rewriting history, deleting
@@ -48,14 +47,14 @@ across Day 20-25 of a 30-day study schedule). One lesson at a time.
 ## Conventions
 
 - Lesson files are `class_NN_topic.py`, where `NN` is the **course-wide** lesson number
-  (1-67), not the per-day one. Day grouping lives in the vault notes, not here.
+  (1-67).
 - Two kinds of lesson file:
   - **Standalone exercise** — `class_NN_topic.py`, runnable on its own. The default.
   - **Incremental project** — when consecutive lessons build one growing program, it gets a
     plain filename with no `class_NN` prefix (e.g. `reminder_app.py`), and each lesson edits
     it in place and commits as `feat: class NN <topic>`. Keep it one file until that
     genuinely hurts; a split into modules happens inside that lesson's own commit.
-- Evaluation scores measured while working through a lesson belong in the vault note, not
+- Evaluation scores measured while working through a lesson belong in the lesson notes, not
   here. `results.json` is gitignored on purpose: the repo holds the runnable prompt, the
   note holds the number it produced.
 - `chat_helpers.py` holds the shared `add_user_message` / `add_assistant_message` /
@@ -63,5 +62,5 @@ across Day 20-25 of a 30-day study schedule). One lesson at a time.
   earlier lesson scripts must keep working, so new parameters get defaults.
 - Packages go through `uv add` / `uv run`. Never `pip install`.
 - The API key lives only in `.env` — never in code, never in a commit, never in chat.
-- Theory notes live in the vault (`~/ai_session_summary/ironman/`). Do not copy them
-  here; this repo holds runnable code only.
+- Theory notes live outside this repo. Do not copy them here; this repo holds runnable
+  code only.
