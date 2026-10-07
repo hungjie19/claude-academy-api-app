@@ -24,7 +24,8 @@ def add_assistant_message(messages, text):
     messages.append({"role": "assistant", "content": text})
 
 
-def chat(messages, system=None, temperature=None, stop_sequences=None, max_tokens=1000):
+def chat(messages, system=None, temperature=None, stop_sequences=None, max_tokens=1000,
+         thinking=False, thinking_budget=1024):
     # max_tokens 從第 15 堂起要調大：餐食計畫帶熱量、三大營養素、份量與時間，
     # 1000 tokens 會被截斷，而截斷的輸出會讓評估分數測到的是截斷、不是提示。
     params = {"model": model, "max_tokens": max_tokens, "messages": messages}
@@ -39,5 +40,19 @@ def chat(messages, system=None, temperature=None, stop_sequences=None, max_token
     # 所以用 extra_body 直接塞進 request body 繞過 SDK 的簽名。
     if temperature is not None:
         params["extra_body"] = {"temperature": temperature}
+    # 第 39 堂：擴展思考。budget_tokens 最小 1024；max_tokens 必須大於它，
+    # 所以這裡把 thinking_budget 加在呼叫端要的輸出 max_tokens 之上，而不是取代它。
+    if thinking:
+        params["max_tokens"] = thinking_budget + max_tokens
+        params["thinking"] = {"type": "enabled", "budget_tokens": thinking_budget}
     message = client.messages.create(**params)
-    return message.content[0].text
+    # 開了 thinking 後 content[0] 是 thinking 區塊（沒有 .text），最終文字會在它後面；
+    # 印出思考過程讓它可見，再回傳文字區塊本身。
+    text = None
+    for block in message.content:
+        if block.type in ("thinking", "redacted_thinking"):
+            label = "思考過程" if block.type == "thinking" else "已編輯思考（內容被加密）"
+            print(f"--- {label} ---\n{getattr(block, 'thinking', '<redacted>')}\n")
+        elif block.type == "text":
+            text = block.text
+    return text
