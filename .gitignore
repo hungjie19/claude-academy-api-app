@@ -20,3 +20,6 @@ meal_plan_report*.html
 
 # 文字編輯工具的沙盒（第 30 堂，執行時產生）
 sandbox/
+
+# code execution 容器下載的圖表與報告（第 46 堂，執行時產生）
+class_46_outputs/
