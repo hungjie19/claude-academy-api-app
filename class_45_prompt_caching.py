@@ -334,24 +334,25 @@ def ask(question):
     )
 
 
-def show(label, message):
+def show(label, question, message):
     u = message.usage
     print(f"--- {label} ---")
+    print(f"user 訊息：{question!r}")
     print(f"cache_creation_input_tokens={u.cache_creation_input_tokens}  "
           f"cache_read_input_tokens={u.cache_read_input_tokens}  "
           f"input_tokens={u.input_tokens}")
 
 
 if __name__ == "__main__":
-    r1 = ask("用一句話總結你的職責。")
-    show("A1：第一次請求", r1)
+    q1 = "用一句話總結你的職責。"
+    show("A1：第一次請求", q1, ask(q1))
 
-    r2 = ask("用一句話總結你的職責。")
-    show("A2：完全相同前綴，應該 cache_read", r2)
+    q2 = "用一句話總結你的職責。"
+    show("A2：完全相同前綴，應該 cache_read", q2, ask(q2))
 
-    r3 = ask("你會怎麼處理測試覆蓋率不足的 PR？")
-    show("B：system 不變、user 訊息換了，應該仍是 cache_read", r3)
+    q3 = "你會怎麼處理測試覆蓋率不足的 PR？"
+    show("B：system 不變、user 訊息換了，應該仍是 cache_read", q3, ask(q3))
 
     system_block[0]["text"] = SYSTEM_PROMPT + " Please follow these rules carefully."
-    r4 = ask("用一句話總結你的職責。")
-    show("C：system 本身多了一句話，應該強制 cache_creation", r4)
+    q4 = "用一句話總結你的職責。"
+    show("C：system 本身多了一句話，應該強制 cache_creation", q4, ask(q4))
