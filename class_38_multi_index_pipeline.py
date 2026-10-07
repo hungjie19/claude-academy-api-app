@@ -19,6 +19,9 @@ k_rrf 用業界常用的 60（官方示範為了好懂用 1）。RRF 比的是�
     add_document()，5 個文件就是 5 次 Voyage API 呼叫，加上查詢那 1 次，
     一分鐘內會超過免費額度的 3 RPM。這個方法只是把文件一次性 batch 嵌入，
     介面精神不變，純粹是配合真實世界的 rate limit。
+  - Retriever 多加了 explain()：除了回傳融合後的結果，也回傳每個索引各自
+    的完整排行榜，方便直接看出 RRF 是怎麼把兩張排行榜疊成一個分數（只多一次
+    拆解，不會多打 API，因為兩者共用同一次 index.search() 呼叫的結果）。
 
 需要 VOYAGE_API_KEY。這堂送 2 次請求（文件一次 batch、查詢一次）。
 
@@ -175,12 +178,17 @@ class Retriever:
         for index in self._indexes:
             index.add_document(document)
 
-    def search(self, query_text, k=1, k_rrf=60):
+    def _rankings(self, query_text):
+        """每個索引各自對全部文件排出的完整名單。查詢只嵌入一次，
+        結果同時給 explain() 顯示排行榜、也給 _fuse() 算 RRF，避免重複呼叫 API。
+        回傳 {index 物件: [(doc, 原始分數), ...]}。
+        """
+        return {index: index.search(query_text, k=len(index)) for index in self._indexes}
+
+    def _fuse(self, rankings, k=1, k_rrf=60):
         rrf_scores = {}
         doc_lookup = {}
-        for index in self._indexes:
-            # 每個索引都回傳「全部文件」的排名，RRF 才能公平比較兩邊
-            results = index.search(query_text, k=len(index))
+        for results in rankings.values():
             for rank, (doc, _score) in enumerate(results, start=1):
                 key = doc["content"]
                 rrf_scores[key] = rrf_scores.get(key, 0.0) + 1 / (k_rrf + rank)
@@ -189,21 +197,48 @@ class Retriever:
         ranked = sorted(rrf_scores.items(), key=lambda pair: pair[1], reverse=True)
         return [(doc_lookup[key], score) for key, score in ranked[:k]]
 
+    def search(self, query_text, k=1, k_rrf=60):
+        rankings = self._rankings(query_text)
+        return self._fuse(rankings, k=k, k_rrf=k_rrf)
+
+    def explain(self, query_text, k=1, k_rrf=60):
+        """教學用：同時回傳「各索引自己的完整排行榜」跟「融合後的前 k 名」，
+        方便示範 RRF 是怎麼把兩張排行榜疊成一個分數。
+        """
+        rankings = self._rankings(query_text)
+        fused = self._fuse(rankings, k=k, k_rrf=k_rrf)
+        return rankings, fused
+
 
 # 步驟 1 分塊
 chunks = chunk_by_section(SAMPLE)
 documents = [{"content": chunk} for chunk in chunks]
 
 # 步驟 2 建索引：向量索引 + BM25 索引各自吃同一批文件
-retriever = Retriever(VectorIndex(), BM25Index())
+vector_index = VectorIndex()
+bm25_index = BM25Index()
+retriever = Retriever(vector_index, bm25_index)
 retriever.index_documents(documents)
 
 # 步驟 3 查詢：精確代號，考驗向量搜尋的弱點、BM25 的強項
 query = "INC-2023-Q4-011 這起事件處理得如何？"
 
-# 步驟 4 混合搜尋：RRF 分數越高越相關
-results = retriever.search(query, k=3)
-for doc, score in results:
-    print(f"RRF {score:.3f}")
-    print(doc["content"][:200])
-    print("----")
+# 步驟 4 混合搜尋：先看兩個索引各自的排行榜，再看 RRF 怎麼把它們疊成一個分數
+rankings, fused = retriever.explain(query, k=3)
+
+
+def first_line(doc):
+    return doc["content"].splitlines()[0]
+
+
+print("== 向量搜尋排行榜（VectorIndex，距離越小越相關）==")
+for rank, (doc, distance) in enumerate(rankings[vector_index], start=1):
+    print(f"{rank}. 距離 {distance:.3f}  {first_line(doc)}")
+
+print("\n== BM25 排行榜（BM25Index，分數越大越相關）==")
+for rank, (doc, score) in enumerate(rankings[bm25_index], start=1):
+    print(f"{rank}. 分數 {score:.3f}  {first_line(doc)}")
+
+print("\n== RRF 混合結果（分數越大越相關）==")
+for doc, score in fused:
+    print(f"RRF {score:.3f}  {first_line(doc)}")
