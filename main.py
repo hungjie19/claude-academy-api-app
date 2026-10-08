@@ -4,13 +4,33 @@
 轉成 Claude 的 tools 參數格式；Claude 要用工具時，透過 MCPClient 真正執行，
 Claude 從沒直接碰過 mcp_server.py（48 堂的重點）。
 
+第 54 堂：輸入裡的 `@文件名` 被偵測到就直接讀資源、把內容塞進送給 Claude
+的訊息——不必透過工具呼叫，Claude 開局就拿到內容。課程原版有自動完成
+選單 UI，這支 CLI 只做偵測與注入這個機制本身，UI 不是教學重點就先省略。
+
 用法：uv run main.py
 """
 
 import asyncio
+import re
 
 from chat_helpers import add_user_message, client, model
 from mcp_client import MCPClient
+
+MENTION_RE = re.compile(r"@(\S+)")
+
+
+async def inject_mentions(mcp: MCPClient, text: str) -> str:
+    doc_ids = MENTION_RE.findall(text)
+    if not doc_ids:
+        return text
+
+    blocks = []
+    for doc_id in doc_ids:
+        content = await mcp.read_resource(f"docs://documents/{doc_id}")
+        blocks.append(f'<document id="{doc_id}">\n{content}\n</document>')
+
+    return text + "\n\n" + "\n\n".join(blocks)
 
 
 def tool_schema(tool):
@@ -69,7 +89,8 @@ async def main():
             user_input = input("You: ")
             if user_input.lower() in ("quit", "exit"):
                 break
-            add_user_message(messages, user_input)
+            expanded = await inject_mentions(mcp, user_input)
+            add_user_message(messages, expanded)
             await run_conversation(mcp, messages, tools)
 
 
