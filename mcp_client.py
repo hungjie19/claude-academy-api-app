@@ -1,15 +1,20 @@
-"""第 52 堂：實作客戶端 + 第 54 堂：存取資源。
+"""第 52 堂：實作客戶端 + 第 54 堂：存取資源 + 第 56 堂：存取 prompts。
 
-mcp_client.py 從 52 堂開始建立（56 堂還會疊上去）。
+mcp_client.py 從 52 堂開始建立。
 MCPClient 包一層 ClientSession：session 用完要做資源清理，包起來用
 async context manager 自動處理，不用每個呼叫端自己記得收尾。
 
-main.py 對這個類別只需要三件事：拿工具清單給 Claude、Claude 要用時執行
-工具、`@文件名` 被提及時讀資源內容。
+main.py 對這個類別需要四件事：拿工具清單給 Claude、Claude 要用時執行
+工具、`@文件名` 被提及時讀資源內容、`/prompt名 參數` 被輸入時取得
+prompt 展開後的訊息。
 
 第 54 堂：read_resource() 只取 result.contents[0]——課程筆記說「通常你
 只要第一個元素」。MIME 類型是 application/json 就用 json.loads 還原成
 物件，否則就是純文字直接回傳。
+
+第 56 堂：list_prompts()/get_prompt() 直接對應 ClientSession 原生方法，
+沒有額外轉換——prompt 的參數（例如 format 的 doc_id）由呼叫端決定要傳
+什麼，這裡只是單純轉發。
 
 用法：uv run mcp_client.py（自帶測試：連上 mcp_server.py 印出工具清單）
 """
@@ -73,6 +78,14 @@ class MCPClient:
             return resource.text
 
         return resource
+
+    async def list_prompts(self) -> list[types.Prompt]:
+        result = await self.session().list_prompts()
+        return result.prompts
+
+    async def get_prompt(self, prompt_name: str, args: dict[str, str]) -> list[types.PromptMessage]:
+        result = await self.session().get_prompt(prompt_name, args)
+        return result.messages
 
 
 async def main():
