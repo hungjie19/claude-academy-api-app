@@ -1,8 +1,13 @@
-"""第 50 堂：用 MCP 定義工具。
+"""第 50 堂：用 MCP 定義工具 + 第 53 堂：定義資源。
 
-mcp_server.py 從這堂開始建立（51-56 堂持續疊上去）。用官方 Python SDK 的
+mcp_server.py 從 50 堂開始建立（51-56 堂持續疊上去）。用官方 Python SDK 的
 FastMCP：不手寫 JSON schema，靠裝飾器與型別提示自動生成——Day 22 手寫的
 description 現在變成 Pydantic 的 Field()。
+
+第 53 堂：資源（resources）跟工具不是同一回事——工具由 Claude 自己判斷要不
+要呼叫（模型控制），資源由應用程式決定何時要（App 控制），類似 HTTP 的
+GET。兩種資源：直接資源（固定 URI，列出全部）、範本化資源（URI 帶
+{doc_id} 參數，查單一個）。
 
 警告（課程筆記提過要核對）：這支程式只在 mcp<2（裝的是 1.30.0）能跑。
 mcp 2.x 把 FastMCP 整個改名成 MCPServer，import 路徑不一樣，pyproject.toml
@@ -49,6 +54,18 @@ def edit_document(
     if doc_id not in docs:
         raise ValueError(f"Doc with id {doc_id} not found")
     docs[doc_id] = docs[doc_id].replace(old_str, new_str)
+
+
+@mcp.resource("docs://documents", mime_type="application/json")
+def list_docs() -> list[str]:
+    return list(docs.keys())
+
+
+@mcp.resource("docs://documents/{doc_id}", mime_type="text/plain")
+def fetch_doc(doc_id: str) -> str:
+    if doc_id not in docs:
+        raise ValueError(f"Doc with id {doc_id} not found")
+    return docs[doc_id]
 
 
 if __name__ == "__main__":
