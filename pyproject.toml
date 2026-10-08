@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "anthropic>=1.11.0",
-    "mcp<2",
+    "mcp[cli]<2",
     "python-dotenv>=1.2.4",
     "voyageai>=0.5.0",
 ]
